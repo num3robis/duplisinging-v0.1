@@ -1,4 +1,7 @@
-import type { SpotifyPlaylistTrackType, SpotifyPlaylistType } from 'src/interfaces/spotifyAPI.interface';
+import type {
+	SpotifyPlaylistTrackType,
+	SpotifyPlaylistType
+} from 'src/interfaces/spotifyAPI.interface';
 import { identity } from 'svelte/internal';
 import { readable } from 'svelte/store';
 import { accessToken, timeRange, token } from './token.store';
@@ -8,8 +11,8 @@ let tracksPlaylisted: Array<SpotifyPlaylistTrackType> = [];
 
 export function initialValue() {
 	return {
-		playlists: new Map(),
-	}
+		playlists: new Map()
+	};
 }
 
 export function makePlaylistStore(args) {
@@ -23,11 +26,11 @@ function unsubscribe() {
 }
 
 function makeSubscribe(data, _args) {
-	// 2. Create a closure with access to the 
+	// 2. Create a closure with access to the
 	// initial data and initialization arguments
-	return set => {
-		console.log('init set', set)
-		// 3. This won't get executed until the store has 
+	return (set) => {
+		console.log('init set', set);
+		// 3. This won't get executed until the store has
 		// its first subscriber. Kick off retrieval.
 		fetchPlaylistData(data, set, 0);
 
@@ -60,9 +63,9 @@ async function fetchPlaylistData(data, set, offset) {
 			const playlists = await responsePLaylists.json();
 
 			if (playlists.items != null) {
-				await offset === 0
-					? playlistToStore = playlists.items
-					: playlistToStore = [...playlistToStore, ...playlists.items];
+				(await offset) === 0
+					? (playlistToStore = playlists.items)
+					: (playlistToStore = [...playlistToStore, ...playlists.items]);
 
 				if (playlistToStore == null) {
 					playlistToStore = [];
@@ -78,15 +81,13 @@ async function fetchPlaylistData(data, set, offset) {
 						map[obj.id] = obj;
 						return map;
 					}, {})
-				}
+				};
 				set(playlistToSet);
 			}
-
 		} else {
 			const text = responsePLaylists.text();
 			throw new Error(await text);
 		}
-
 	} catch (error) {
 		// 6b. if there is a fetch error - deal with it
 		// and let observers know
@@ -95,10 +96,9 @@ async function fetchPlaylistData(data, set, offset) {
 	}
 }
 
-
 export async function removeDuplicatesCall(playlist, offset) {
 	try {
-		const urlPlaylistTracks = await new URL(playlist.tracks.href + "?");
+		const urlPlaylistTracks = await new URL(playlist.tracks.href + '?');
 
 		// @ts-ignore
 		const params = new URLSearchParams({
@@ -116,9 +116,9 @@ export async function removeDuplicatesCall(playlist, offset) {
 		if (responsePLaylistTracks.ok) {
 			const tracks = await responsePLaylistTracks.json();
 			if (tracks.items != null && tracks.items.length != 0) {
-				await offset === 0
-					? tracksPlaylisted = tracks.items
-					: tracksPlaylisted = [...tracksPlaylisted, ...tracks.items];
+				(await offset) === 0
+					? (tracksPlaylisted = tracks.items)
+					: (tracksPlaylisted = [...tracksPlaylisted, ...tracks.items]);
 
 				if (tracksPlaylisted == null) {
 					tracksPlaylisted = [];
@@ -130,20 +130,21 @@ export async function removeDuplicatesCall(playlist, offset) {
 
 			if (tracksPlaylisted.length === tracks.total && tracksPlaylisted.length != 0) {
 				// Get one id for each duplicate
-				const duplicatesIds = tracksPlaylisted.map(e => e['track']['id'])
+				const duplicatesIds = tracksPlaylisted
+					.map((e) => e['track']['id'])
 					.map((e, i, final) => final.indexOf(e) !== i && i)
-					.filter(obj => tracksPlaylisted[obj])
-					.map(e => tracksPlaylisted[e]['track']["id"])
-				let firstDuplicate = []
+					.filter((obj) => tracksPlaylisted[obj])
+					.map((e) => tracksPlaylisted[e]['track']['id']);
+				let firstDuplicate = [];
 				// Get all duplicate elements except first one
 				const duplicatesFound = tracksPlaylisted.filter((track, index) => {
 					let first = true;
 					if (duplicatesIds.includes(track.track.id)) {
-						track.index = index
+						track.index = index;
 						if (!firstDuplicate.includes(track.track.id)) {
 							first = false;
 						}
-						firstDuplicate.push(track.track.id)
+						firstDuplicate.push(track.track.id);
 					}
 					return first ? duplicatesIds.includes(track.track.id) : false;
 				});
@@ -151,22 +152,27 @@ export async function removeDuplicatesCall(playlist, offset) {
 					do {
 						const chunk = duplicatesFound.splice(0, 50);
 						const body = {
-							tracks: chunk.map(track => {
-								return { uri: track.track.uri, positions: [track.index] }
+							tracks: chunk.map((track) => {
+								return { uri: track.track.uri, positions: [track.index] };
 							})
 						};
-						await fetch(`https://api.spotify.com/v1/users/${encodeURIComponent(playlist.owner.id)}/playlists/${playlist.id}/tracks`, {
-							method: 'DELETE',
-							headers: {
-								Authorization: 'Bearer ' + accessToken
-							},
-							body: JSON.stringify(body)
-						});
+						await fetch(
+							`https://api.spotify.com/v1/users/${encodeURIComponent(
+								playlist.owner.id
+							)}/playlists/${playlist.id}/tracks`,
+							{
+								method: 'DELETE',
+								headers: {
+									Authorization: 'Bearer ' + accessToken
+								},
+								body: JSON.stringify(body)
+							}
+						);
 					} while (duplicatesFound.length > 0);
 				}
 			}
 		}
 	} catch (error) {
-		console.error("error", error)
+		console.error('error', error);
 	}
 }

@@ -15,13 +15,14 @@ async function getMyUser() {
 		offset: 0
 	});
 	// @ts-ignore
-	userToStore.push(await fetch(url + params, {
-		headers: {
-			Authorization: 'Bearer ' + accessToken
-		}
-	}));
+	userToStore.push(
+		await fetch(url + params, {
+			headers: {
+				Authorization: 'Bearer ' + accessToken
+			}
+		})
+	);
 }
 
 getMyUser();
 export const userStore = readable(userToStore);
-

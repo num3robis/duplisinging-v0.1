@@ -15,21 +15,21 @@
 
 	const url = new URL('https://accounts.spotify.com/authorize?');
 	const scopes = [
-        /*
+		/*
             the permission for reading public playlists is granted
             automatically when obtaining an access token through
             the user login form
             */
-        'playlist-read-private',
-        'playlist-read-collaborative',
-        'playlist-modify-public',
-        'playlist-modify-private',
-        'user-library-read',
-        'user-library-modify',
-		'user-read-private', 
-		'user-read-email', 
+		'playlist-read-private',
+		'playlist-read-collaborative',
+		'playlist-modify-public',
+		'playlist-modify-private',
+		'user-library-read',
+		'user-library-modify',
+		'user-read-private',
+		'user-read-email',
 		'user-top-read'
-      ]
+	];
 	const scope = scopes.join(' ');
 	const state = generateRandomString(16);
 	let rememberMe = true;
@@ -67,7 +67,6 @@
 		</a>
 	</section>
 {/if}
-
 
 <style>
 	input {

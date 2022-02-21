@@ -9,6 +9,10 @@ const config = {
 
 	kit: {
 		adapter: adapter()
+	},
+	assets: 'src/assets',
+	paths: {
+		assets: 'src/assets'
 	}
 };
 

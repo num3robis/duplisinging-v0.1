@@ -3,5 +3,13 @@
 	import Login from '../components/login.svelte';
 </script>
 
-<Login />
-<Playlist />
+<main>
+	<Login />
+	<Playlist />
+</main>
+
+<style>
+	main {
+		text-align: center;
+	}
+</style>
