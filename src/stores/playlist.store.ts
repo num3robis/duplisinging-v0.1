@@ -1,8 +1,10 @@
+import type { SpotifyPlaylistTrackType, SpotifyPlaylistType } from 'src/interfaces/spotifyAPI.interface';
 import { identity } from 'svelte/internal';
-import { derived, readable } from 'svelte/store';
-import { accessToken, timeRange } from './token.store';
+import { readable } from 'svelte/store';
+import { accessToken, timeRange, token } from './token.store';
 
-let playlistToStore = [];
+let playlistToStore: Array<SpotifyPlaylistType> = [];
+let tracksPlaylisted: Array<SpotifyPlaylistTrackType> = [];
 
 export function initialValue() {
 	return {
@@ -90,5 +92,81 @@ async function fetchPlaylistData(data, set, offset) {
 		// and let observers know
 		data.error = error;
 		set(data);
+	}
+}
+
+
+export async function removeDuplicatesCall(playlist, offset) {
+	try {
+		const urlPlaylistTracks = await new URL(playlist.tracks.href + "?");
+
+		// @ts-ignore
+		const params = new URLSearchParams({
+			time_range: timeRange,
+			limit: 50,
+			offset: offset
+		});
+		// @ts-ignore
+		const responsePLaylistTracks = await fetch(urlPlaylistTracks + params, {
+			headers: {
+				Authorization: 'Bearer ' + accessToken
+			}
+		});
+
+		if (responsePLaylistTracks.ok) {
+			const tracks = await responsePLaylistTracks.json();
+			if (tracks.items != null && tracks.items.length != 0) {
+				await offset === 0
+					? tracksPlaylisted = tracks.items
+					: tracksPlaylisted = [...tracksPlaylisted, ...tracks.items];
+
+				if (tracksPlaylisted == null) {
+					tracksPlaylisted = [];
+				}
+				while (tracksPlaylisted.length !== tracks.total) {
+					await removeDuplicatesCall(playlist, offset + 50);
+				}
+			}
+
+			if (tracksPlaylisted.length === tracks.total && tracksPlaylisted.length != 0) {
+				// Get one id for each duplicate
+				const duplicatesIds = tracksPlaylisted.map(e => e['track']['id'])
+					.map((e, i, final) => final.indexOf(e) !== i && i)
+					.filter(obj => tracksPlaylisted[obj])
+					.map(e => tracksPlaylisted[e]['track']["id"])
+				let firstDuplicate = []
+				// Get all duplicate elements except first one
+				const duplicatesFound = tracksPlaylisted.filter((track, index) => {
+					let first = true;
+					if (duplicatesIds.includes(track.track.id)) {
+						track.index = index
+						if (!firstDuplicate.includes(track.track.id)) {
+							first = false;
+						}
+						firstDuplicate.push(track.track.id)
+					}
+					return first ? duplicatesIds.includes(track.track.id) : false;
+				});
+				if (duplicatesFound != null && duplicatesFound.length != 0) {
+					do {
+						const chunk = duplicatesFound.splice(0, 50);
+						const body = {
+							tracks: chunk.map(track => {
+								return { uri: track.track.uri, positions: [track.index] }
+							})
+						};
+						await fetch(`https://api.spotify.com/v1/users/${encodeURIComponent(playlist.owner.id)}/playlists/${playlist.id}/tracks`, {
+							method: 'DELETE',
+							headers: {
+								Authorization: 'Bearer ' + accessToken
+							},
+							body: JSON.stringify(body)
+						});
+					} while (duplicatesFound.length > 0);
+				}
+			}
+		}
+	} catch (error) {
+		console.error("error", error)
 	}
 }

@@ -1,7 +1,7 @@
 <script>
 	import { token, tokenExpired, appUrl } from '../stores/token.store';
 
-	// Your client id
+	const client_id = '0c44981898054274b062bcc6676b89d3'; // Your client id
 
 	function generateRandomString(length) {
 		let text = '';
@@ -14,7 +14,23 @@
 	}
 
 	const url = new URL('https://accounts.spotify.com/authorize?');
-	const scope = 'user-read-private user-read-email user-top-read';
+	const scopes = [
+        /*
+            the permission for reading public playlists is granted
+            automatically when obtaining an access token through
+            the user login form
+            */
+        'playlist-read-private',
+        'playlist-read-collaborative',
+        'playlist-modify-public',
+        'playlist-modify-private',
+        'user-library-read',
+        'user-library-modify',
+		'user-read-private', 
+		'user-read-email', 
+		'user-top-read'
+      ]
+	const scope = scopes.join(' ');
 	const state = generateRandomString(16);
 	let rememberMe = true;
 	// @ts-ignore

@@ -1,11 +1,11 @@
 <script>
-	import { initialValue, makePlaylistStore } from '../stores/playlist.store';
+	import { initialValue, makePlaylistStore, removeDuplicatesCall } from '../stores/playlist.store';
 	import { onDestroy, onMount } from 'svelte';
 
 	let selectedPlaylists = [];
 	let unsubscribe;
 	let playlistsStore = makePlaylistStore(null);
-	$: playlists = initialValue();
+	let playlists = initialValue();
 
 	function updateUsers(data) {
 		// trigger component reactivity
@@ -25,10 +25,20 @@
 		}
 	}
 
+	function removeDuplicates(playlist) {
+		console.log(playlist);
+		removeDuplicatesCall(playlist, 0);
+		//return true;
+	}
+
 	onMount(onMountFetch);
 </script>
 
 {#if playlists.playlists.size != 0}
+	<button> Remove all duplicates </button>
+	<button> Like all songs </button>
+	<button disabled={selectedPlaylists.length === 0}> Remove selected duplicates </button>
+	<button disabled={selectedPlaylists.length === 0}> Like selected songs </button>
 	<div class="items-container">
 		{#each Object.values(playlists.playlists) as playlist, i}
 			<div class="list-container">
@@ -42,6 +52,20 @@
 						/>
 						{playlist.name}
 					</label>
+					<button
+						class="removeDuplicates"
+						on:click={() => removeDuplicates(playlist)}
+						disabled={!selectedPlaylists.find((selected) => selected === playlist.name)}
+					>
+						Remove duplicates
+					</button>
+					<button
+						class="likeSongs"
+						on:click={() => console.log(selectedPlaylists)}
+						disabled={!selectedPlaylists.find((selected) => selected === playlist.name)}
+					>
+						Like songs
+					</button>
 				</div>
 			</div>
 		{/each}
@@ -49,6 +73,14 @@
 {/if}
 
 <style>
+	.likeSongs {
+		float: right;
+	}
+	.removeDuplicates {
+		float: right;
+		margin-left: 1rem;
+	}
+
 	.expand-btn {
 		width: clamp(20rem, 70%, 45rem);
 		font-size: 2rem;
@@ -107,7 +139,6 @@
 		background: var(--dark-2);
 		padding: 1rem;
 		margin: 0.3rem;
-		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		height: clamp(8rem, auto, 10rem);
